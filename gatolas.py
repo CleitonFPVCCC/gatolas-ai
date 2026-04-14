@@ -26,6 +26,9 @@ nomes = ["Senhor C", "Senhor Cleiton", "Young Drone Man"]
 API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+# 🌐 SERVIDOR ONLINE
+SERVER_URL = "https://gatolas-ai.onrender.com/perguntar"
+
 # ⏱️ CONTROLO
 ativo = False
 falando = False
@@ -35,7 +38,7 @@ TEMPO_ATIVO = 20
 # 🔥 CONTROLO DE UTILIZADOR
 modo_dono = False
 
-# 🔥 WAKE WORDS (NÃO ALTERADO)
+# 🔥 WAKE WORDS (INALTERADO)
 WAKE_WORDS = [
     "gatolas", "gatola", "gato", "wakeup", "wa", "canto", "12", "ca", "123",
     "hora de acordar", "ok gatolas", "one two three",
@@ -43,7 +46,7 @@ WAKE_WORDS = [
 ]
 
 # =========================
-# 🧠 IA
+# 🧠 IA LOCAL (BACKUP)
 # =========================
 def perguntar_ia(pergunta):
     global historico
@@ -90,10 +93,14 @@ def perguntar_ia(pergunta):
         print("Erro IA:", e)
         return "Erro na inteligência."
 
+
+# =========================
+# 🌐 SERVIDOR (PRINCIPAL)
+# =========================
 def perguntar_servidor(texto, is_dono):
     try:
         response = requests.post(
-            "http://127.0.0.1:8000/perguntar",
+            SERVER_URL,
             json={
                 "texto": texto,
                 "dono": is_dono
@@ -102,25 +109,38 @@ def perguntar_servidor(texto, is_dono):
         )
 
         if response.status_code == 200:
-            return response.json()["resposta"]
+            data = response.json()
+
+            # 🔥 tenta várias chaves possíveis
+            return (
+                data.get("resposta")
+                or data.get("reply")
+                or data.get("message")
+                or "Resposta vazia do servidor."
+            )
 
         return "Erro ao comunicar com o cérebro."
 
     except Exception as e:
         print("Erro servidor:", e)
-        return "Servidor não disponível."
-
+        return None  # 🔥 importante
+    
 # =========================
 # 🧠 CÉREBRO CENTRAL
 # =========================
 def gatolas_brain(pergunta, is_dono):
-    # 🔹 primeiro tenta comandos locais
-    resposta_local = resposta(pergunta, is_dono)
 
+    # 🔹 comandos locais
+    resposta_local = resposta(pergunta, is_dono)
     if resposta_local:
         return resposta_local
 
-    # 🔥 fallback para IA
+    # 🌐 servidor online
+    resposta_server = perguntar_servidor(pergunta, is_dono)
+    if resposta_server and "Erro" not in resposta_server:
+        return resposta_server
+
+    # 🔻 fallback local
     return perguntar_ia(pergunta)
 
 
@@ -138,6 +158,7 @@ def detectar_idioma(texto):
 
     return "pt" if pt >= en else "en"
 
+
 async def falar_async(texto):
     global falando
 
@@ -149,13 +170,8 @@ async def falar_async(texto):
     try:
         falando = True
 
-        # 🔥 DETECTAR IDIOMA
         idioma = detectar_idioma(texto)
-
-        if idioma == "en":
-            voice = "en-US-GuyNeural"
-        else:
-            voice = "pt-BR-AntonioNeural"
+        voice = "en-US-GuyNeural" if idioma == "en" else "pt-BR-AntonioNeural"
 
         nome_arquivo = f"voz_{int(time.time())}.mp3"
 
@@ -170,13 +186,13 @@ async def falar_async(texto):
 
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
-
         os.remove(nome_arquivo)
 
     except Exception as e:
         print("Erro voz:", e)
 
     falando = False
+
 
 def falar(texto):
     threading.Thread(
@@ -194,7 +210,6 @@ def ouvir_continuo():
     r.energy_threshold = 400
     r.dynamic_energy_threshold = False
     r.pause_threshold = 0.6
-    r.non_speaking_duration = 0.3
 
     with sr.Microphone() as source:
         print("🎧 Microfone ativo...")
@@ -207,7 +222,6 @@ def ouvir_continuo():
                 continue
 
             try:
-                print("🎤 A escutar...")
                 audio = r.listen(source)
 
                 texto = r.recognize_google(audio, language="pt-PT").lower()
@@ -234,12 +248,8 @@ def ouvir_continuo():
                     fila.put(("voz", texto, modo_dono))
                     tempo_ultimo_comando = time.time()
 
-            except sr.UnknownValueError:
+            except:
                 pass
-
-            except Exception as e:
-                print("❌ Erro:", e)
-                time.sleep(1)
 
 
 # =========================
@@ -255,28 +265,13 @@ def resposta(cmd, is_dono):
     elif "horas" in cmd:
         return time.strftime("Agora são %H:%M.")
 
-    elif "o que é" in cmd:
-        resp = perguntar_ia(cmd)
-        return f"{nome}, {resp}" if is_dono else resp
-
     if not is_dono:
         return "Acesso limitado."
 
-    if "adicionar tarefa" in cmd:
-        memoria["tarefas"].append(cmd)
-        return f"Tarefa registada, {nome}."
-
-    elif "tarefas" in cmd:
+    if "tarefas" in cmd:
         return "Suas tarefas: " + ", ".join(memoria["tarefas"]) if memoria["tarefas"] else "Nenhuma tarefa."
 
-    elif "ccc" in cmd:
-        return "CCC Express Delivery está a crescer."
-
-    if len(cmd) < 10:
-        return ""
-
-    resp = perguntar_ia(cmd)
-    return f"{nome}, {resp}"
+    return None
 
 
 # =========================
@@ -284,6 +279,10 @@ def resposta(cmd, is_dono):
 # =========================
 def processar(cmd, origem, is_dono):
     resposta_texto = perguntar_servidor(cmd, is_dono)
+
+    # 🔥 fallback inteligente
+    if not resposta_texto:
+        resposta_texto = gatolas_brain(cmd, is_dono)
 
     if resposta_texto:
         if origem == "voz":
@@ -301,7 +300,7 @@ def ler_teclado():
             entrada = input("\nVocê: ")
             if entrada:
                 fila.put(("teclado", entrada.lower(), True))
-        except EOFError:
+        except:
             break
 
 
@@ -313,7 +312,6 @@ falar("Sistema Gatolas ativo. Pronto para servir.")
 threading.Thread(target=ouvir_continuo, daemon=True).start()
 threading.Thread(target=ler_teclado, daemon=True).start()
 
-# LOOP
 while True:
 
     while not fila.empty():

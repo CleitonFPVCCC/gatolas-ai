@@ -26,12 +26,14 @@ def perguntar(pergunta: Pergunta):
         historico.append({"role": "user", "content": pergunta.texto})
 
         headers = {
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        }
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json",
+    "HTTP-Referer": "https://gatolas-ai.onrender.com",
+    "X-Title": "Gatolas AI"
+}
 
         data = {
-            "model": "openai/gpt-3.5-turbo",
+            "model": "openai/gpt-4o-mini",
             "max_tokens": 120,
             "temperature": 0.7,
             "messages": [
@@ -51,7 +53,10 @@ def perguntar(pergunta: Pergunta):
             return {"resposta": resposta}
 
         else:
-            return {"erro": "Falha API"}
+         return {
+                 "erro": "Falha API",
+                 "detalhe": response.text
+          }
 
     except Exception as e:
         return {"erro": str(e)}
