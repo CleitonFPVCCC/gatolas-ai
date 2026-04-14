@@ -12,7 +12,7 @@ historico = []
 
 class Pergunta(BaseModel):
     texto: str
-    dono: bool = False
+
 
 
 @app.get("/")
