@@ -4,13 +4,15 @@ import requests
 
 app = FastAPI()
 
-API_KEY = "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"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
+import os
+API_KEY = os.getenv("sk-or-v1-fa92d67d1d332a587e961b952aed9e626424991fca3014ea62962c05b3e26674sk-or-v1-30e0d5f80f7ec18b5050e3aa10f77dacc12f37f4a79bac9e7bd6758ea0b3052d")
+API_URL = "https://api.openai.com/v1/chat/completions"
 
 historico = []
 
 class Pergunta(BaseModel):
     texto: str
+    dono: bool = False
 
 
 @app.get("/")

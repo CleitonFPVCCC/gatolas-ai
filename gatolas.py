@@ -23,7 +23,7 @@ historico = []
 nomes = ["Senhor C", "Senhor Cleiton", "Young Drone Man"]
 
 # 🔑 API
-API_KEY = "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"
+API_KEY = "sk-or-v1-fa92d67d1d332a587e961b952aed9e626424991fca3014ea62962c05b3e26674sk-or-v1-30e0d5f80f7ec18b5050e3aa10f77dacc12f37f4a79bac9e7bd6758ea0b3052d"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # 🌐 SERVIDOR ONLINE
@@ -67,12 +67,12 @@ def perguntar_ia(pergunta):
                 {
                     "role": "system",
                     "content": (
-                        "Você é Gatolas, estilo Jarvis.\n"
-                        "- Fala natural, elegante e humano\n"
-                        "- Responde rápido e curto (máx 2 frases)\n"
-                        "- Só chama 'senhor' quando for o dono\n"
-                        "- Se falarem português responde português\n"
-                        "- Se falarem inglês responde inglês"
+                        "Você é Gatolas, um assistente estilo Jarvis.\n"
+                        "- Fala natural e humano\n"
+                        "- Responde curto (máx 2 frases)\n"
+                        "- Só chama 'senhor' se dono=true\n"
+                        "- Se português responde português\n"
+                        "- Se inglês responde inglês"
                     )
                 }
             ] + historico[-6:]
