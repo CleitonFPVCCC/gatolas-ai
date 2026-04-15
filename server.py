@@ -6,7 +6,7 @@ app = FastAPI()
 
 import os
 API_KEY = os.getenv("API_KEY")
-API_URL = "https://api.openai.com/v1/chat/completions"
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 historico = []
 
