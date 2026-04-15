@@ -4,6 +4,14 @@ import requests
 
 app = FastAPI()
 
+def perguntar(pergunta: Pergunta):
+    global historico
+
+    if not API_KEY:
+        return {"erro": "API_KEY não encontrada no servidor"}
+
+    print("API KEY:", API_KEY)
+
 import os
 API_KEY = os.getenv("API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
