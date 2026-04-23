@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Gatolas Voice</title>
+</head>
+<body style="text-align:center; font-family:sans-serif;">
+
+<h1>🤖 Gatolas</h1>
+
+<button onclick="startListening()" style="font-size:20px;">
+🎤 Falar com Gatolas
+</button>
+
+<p id="status"></p>
+<p><b>Você:</b> <span id="userText"></span></p>
+<p><b>Gatolas:</b> <span id="botText"></span></p>
+
+<script>
+const API_URL = "https://gatolas-ai.onrender.com/perguntar";
+
+function startListening() {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "pt-PT";
+
+    document.getElementById("status").innerText = "🎧 A ouvir...";
+
+    recognition.start();
+
+    recognition.onresult = async function(event) {
+        const texto = event.results[0][0].transcript;
+        document.getElementById("userText").innerText = texto;
+
+        document.getElementById("status").innerText = "🧠 Pensando...";
+
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ texto: texto })
+        });
+
+        const data = await response.json();
+
+        const resposta = data.resposta || "Erro...";
+        document.getElementById("botText").innerText = resposta;
+
+        falar(resposta);
+    };
+}
+
+function falar(texto) {
+    const synth = window.speechSynthesis;
+    const utter = new SpeechSynthesisUtterance(texto);
+
+    utter.lang = "pt-BR";
+    synth.speak(utter);
+}
+</script>
+
+</body>
+</html>

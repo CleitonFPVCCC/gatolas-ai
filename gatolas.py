@@ -23,7 +23,7 @@ historico = []
 nomes = ["Senhor C", "Senhor Cleiton", "Young Drone Man"]
 
 # 🔑 API
-API_KEY = "sk-or-v1-fa92d67d1d332a587e961b952aed9e626424991fca3014ea62962c05b3e26674sk-or-v1-30e0d5f80f7ec18b5050e3aa10f77dacc12f37f4a79bac9e7bd6758ea0b3052d"
+API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # 🌐 SERVIDOR ONLINE
@@ -105,7 +105,7 @@ def perguntar_servidor(texto, is_dono):
                 "texto": texto,
                 "dono": is_dono
             },
-            timeout=5
+            timeout=15
         )
 
         if response.status_code == 200:
