@@ -2,60 +2,106 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
-<title>Gatolas Voice</title>
-</head>
-<body style="text-align:center; font-family:sans-serif;">
+<title>Gatolas AI</title>
 
-<h1>🤖 Gatolas</h1>
-
-<button onclick="startListening()" style="font-size:20px;">
-🎤 Falar com Gatolas
-</button>
-
-<p id="status"></p>
-<p><b>Você:</b> <span id="userText"></span></p>
-<p><b>Gatolas:</b> <span id="botText"></span></p>
-
-<script>
-const API_URL = "https://gatolas-ai.onrender.com/perguntar";
-
-function startListening() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "pt-PT";
-
-    document.getElementById("status").innerText = "🎧 A ouvir...";
-
-    recognition.start();
-
-    recognition.onresult = async function(event) {
-        const texto = event.results[0][0].transcript;
-        document.getElementById("userText").innerText = texto;
-
-        document.getElementById("status").innerText = "🧠 Pensando...";
-
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ texto: texto })
-        });
-
-        const data = await response.json();
-
-        const resposta = data.resposta || "Erro...";
-        document.getElementById("botText").innerText = resposta;
-
-        falar(resposta);
-    };
+<style>
+body {
+    background: radial-gradient(circle, #050a1f, #000000);
+    color: #00ccff;
+    font-family: Arial;
+    text-align: center;
+    overflow: hidden;
 }
 
-function falar(texto) {
-    const synth = window.speechSynthesis;
-    const utter = new SpeechSynthesisUtterance(texto);
+h1 {
+    margin-top: 20px;
+    text-shadow: 0 0 20px #00ccff;
+}
 
-    utter.lang = "pt-BR";
-    synth.speak(utter);
+#chat {
+    width: 80%;
+    margin: auto;
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #00ccff;
+    padding: 10px;
+    box-shadow: 0 0 20px #00ccff;
+}
+
+input {
+    width: 60%;
+    padding: 10px;
+    background: black;
+    border: 1px solid #00ccff;
+    color: #00ccff;
+}
+
+button {
+    padding: 10px;
+    background: #00ccff;
+    border: none;
+    cursor: pointer;
+}
+
+.lightning {
+    position: absolute;
+    width: 2px;
+    height: 100%;
+    background: #00ccff;
+    opacity: 0.2;
+    animation: flash 0.2s infinite;
+}
+
+@keyframes flash {
+    0% {opacity: 0;}
+    50% {opacity: 1;}
+    100% {opacity: 0;}
+}
+</style>
+</head>
+
+<body>
+
+<h1>⚡ GATOLAS AI ⚡</h1>
+
+<div id="chat"></div>
+
+<br>
+
+<input id="pergunta" placeholder="Fala com Gatolas...">
+<button onclick="enviar()">Enviar</button>
+
+<script>
+const chat = document.getElementById("chat")
+
+function adicionar(texto) {
+    chat.innerHTML += "<p>" + texto + "</p>"
+    chat.scrollTop = chat.scrollHeight
+}
+
+async function enviar() {
+    let texto = document.getElementById("pergunta").value
+
+    adicionar("Você: " + texto)
+
+    let resposta = await fetch("https://gatolas-ai.onrender.com/perguntar", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({texto})
+    })
+
+    let data = await resposta.json()
+
+    adicionar("Gatolas: " + data.resposta)
+}
+
+// criar relâmpagos
+for(let i=0; i<30; i++){
+    let linha = document.createElement("div")
+    linha.className = "lightning"
+    linha.style.left = Math.random()*100 + "%"
+    linha.style.animationDelay = Math.random() + "s"
+    document.body.appendChild(linha)
 }
 </script>
 
