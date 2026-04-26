@@ -6,62 +6,52 @@
 
 <style>
 body {
-    background: radial-gradient(circle at center, #050a1f, #000000);
-    color: #00ccff;
-    font-family: Arial;
     margin: 0;
+    font-family: Arial;
+    background: radial-gradient(circle, #020617, #000);
+    color: #00eaff;
     overflow: hidden;
 }
 
-/* HEXAGON GRID */
+/* GRID HEX */
 body::before {
     content: "";
     position: absolute;
     width: 100%;
     height: 100%;
-    background-image: 
-        linear-gradient(30deg, #00ccff10 12%, transparent 12.5%, transparent 87%, #00ccff10 87.5%),
-        linear-gradient(150deg, #00ccff10 12%, transparent 12.5%, transparent 87%, #00ccff10 87.5%);
+    background-image:
+        linear-gradient(30deg, #00eaff10 12%, transparent 12.5%),
+        linear-gradient(150deg, #00eaff10 12%, transparent 12.5%);
     background-size: 60px 100px;
     opacity: 0.15;
-    z-index: 0;
 }
 
-/* GARANTE QUE TUDO FICA POR CIMA */
-* {
-    position: relative;
-    z-index: 1;
-}
-
-/* LAYOUT HUD */
-.hud {
+/* LAYOUT */
+.container {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 30px;
+    padding: 20px;
 }
 
-/* PAINÉIS */
+/* PAINEIS */
 .panel {
-    width: 20%;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(0,204,255,0.3);
-    padding: 15px;
-    box-shadow: 0 0 15px rgba(0,204,255,0.2);
-    border-radius: 10px;
-}
-
-/* CENTRO */
-.center {
-    width: 50%;
-    text-align: center;
+    width: 250px;
+    padding: 20px;
+    border: 1px solid #00eaff50;
+    border-radius: 15px;
+    box-shadow: 0 0 20px #00eaff30;
+    background: rgba(0,0,0,0.5);
 }
 
 /* LOGO */
-#logo {
+.logo {
+    text-align: center;
+}
+
+.logo img {
     width: 350px;
-    filter: drop-shadow(0 0 25px #00ccff);
-    animation: pulse 3s infinite ease-in-out;
+    filter: drop-shadow(0 0 40px #00eaff);
+    animation: pulse 3s infinite;
 }
 
 /* ANIMAÇÃO */
@@ -73,90 +63,74 @@ body::before {
 
 /* CHAT */
 #chat {
-    width: 80%;
-    margin: 10px auto;
-    height: 220px;
+    width: 90%;
+    margin: 20px auto;
+    height: 300px;
     overflow-y: auto;
-    border: 1px solid rgba(0,204,255,0.3);
-    padding: 10px;
-    background: rgba(0,0,0,0.5);
+    border: 1px solid #00eaff40;
     border-radius: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.6);
+    box-shadow: 0 0 15px #00eaff20;
 }
 
-/* INPUT AREA */
+/* INPUT */
 .input-area {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 20px;
 }
 
 input {
-    width: 50%;
+    width: 60%;
     padding: 10px;
     background: black;
-    border: 1px solid #00ccff;
-    color: #00ccff;
+    border: 1px solid #00eaff;
+    color: #00eaff;
     border-radius: 5px;
 }
 
 button {
     padding: 10px 20px;
     background: transparent;
-    border: 1px solid #00ccff;
-    color: #00ccff;
+    border: 1px solid #00eaff;
+    color: #00eaff;
     cursor: pointer;
     border-radius: 5px;
+    transition: 0.3s;
 }
 
 button:hover {
-    background: #00ccff;
-    color: black;
-}
-
-/* RELÂMPAGOS SUAVES */
-.lightning {
-    position: absolute;
-    width: 2px;
-    height: 100%;
-    background: linear-gradient(transparent, #00ccff, transparent);
-    opacity: 0.05;
-    animation: flash 4s infinite;
-}
-
-@keyframes flash {
-    0% {opacity: 0;}
-    50% {opacity: 0.3;}
-    100% {opacity: 0;}
+    background: #00eaff20;
+    box-shadow: 0 0 10px #00eaff;
 }
 </style>
 </head>
 
 <body>
 
-<div class="hud">
+<div class="container">
 
     <!-- ESQUERDA -->
     <div class="panel">
         <h2>GATOLAS AI</h2>
-        <p>SISTEMA ONLINE ●</p>
-        <p>STATUS: ATIVO</p>
-        <p>MODELO: GPT-4o-mini</p>
-        <p>CONEXÃO: ESTÁVEL</p>
+        <p>● Sistema Online</p>
+        <p>Status: Ativo</p>
+        <p>Modelo: GPT-4o-mini</p>
+        <p>Conexão: Estável</p>
     </div>
 
-    <!-- CENTRO -->
-    <div class="center">
-        <img id="logo" src="Gatolas.png">
+    <!-- LOGO -->
+    <div class="logo">
+        <img src="Gatolas.png">
     </div>
 
     <!-- DIREITA -->
     <div class="panel">
-        <h3>COMANDOS</h3>
-        <p>/limpar</p>
-        <p>/ajuda</p>
-        <p>/memoria</p>
-        <p>/status</p>
+        <h3>Comandos</h3>
+        <p onclick="limpar()">🧹 /limpar</p>
+        <p onclick="ajuda()">❓ /ajuda</p>
+        <p onclick="memoria()">🧠 /memoria</p>
     </div>
 
 </div>
@@ -167,7 +141,7 @@ button:hover {
 <!-- INPUT -->
 <div class="input-area">
     <input id="pergunta" placeholder="Fala com Gatolas...">
-    <button onclick="enviar()">ENVIAR</button>
+    <button onclick="enviar()">Enviar</button>
 </div>
 
 <script>
@@ -179,13 +153,11 @@ function adicionar(texto) {
 }
 
 async function enviar() {
-    let input = document.getElementById("pergunta")
-    let texto = input.value
+    let texto = document.getElementById("pergunta").value
 
     if(!texto) return
 
     adicionar("Você: " + texto)
-    input.value = ""
 
     let resposta = await fetch("https://gatolas-ai.onrender.com/perguntar", {
         method: "POST",
@@ -198,20 +170,17 @@ async function enviar() {
     adicionar("Gatolas: " + data.resposta)
 }
 
-/* ENTER para enviar */
-document.getElementById("pergunta").addEventListener("keypress", function(e){
-    if(e.key === "Enter"){
-        enviar()
-    }
-})
+/* COMANDOS */
+function limpar() {
+    chat.innerHTML = ""
+}
 
-/* RELÂMPAGOS */
-for(let i=0; i<10; i++){
-    let linha = document.createElement("div")
-    linha.className = "lightning"
-    linha.style.left = Math.random()*100 + "%"
-    linha.style.animationDelay = Math.random()*5 + "s"
-    document.body.appendChild(linha)
+function ajuda() {
+    adicionar("Gatolas: Comandos disponíveis: /limpar, /memoria")
+}
+
+function memoria() {
+    adicionar("Gatolas: Memória ainda em desenvolvimento")
 }
 </script>
 
