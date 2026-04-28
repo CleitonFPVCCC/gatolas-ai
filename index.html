@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Gatolas AI</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <style>
 body {
@@ -12,139 +12,96 @@ body {
     font-family: "Orbitron", sans-serif;
     background: radial-gradient(circle, #020617, #000);
     color: #00eaff;
-    overflow: auto;
+    overflow: hidden;
 }
 
-/* HEX GRID ANIMADO */
+/* HEX REAL */
 body::before {
     content: "";
     position: absolute;
     width: 100%;
     height: 100%;
-    background-image:
-        linear-gradient(30deg, #00eaff08 12%, transparent 12.5%),
-        linear-gradient(150deg, #00eaff08 12%, transparent 12.5%);
-    background-size: 80px 140px;
-    animation: hexMove 12s linear infinite;
-}
-
-@keyframes hexMove {
-    from { background-position: 0 0; }
-    to { background-position: 80px 140px; }
-}
-
-/* LINHAS HUD */
-body::after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-        transparent,
-        transparent 2px,
-        rgba(0,234,255,0.03) 3px
-    );
-    pointer-events: none;
+    background:
+        repeating-linear-gradient(60deg, #00eaff0a 0 2px, transparent 2px 60px),
+        repeating-linear-gradient(-60deg, #00eaff0a 0 2px, transparent 2px 60px);
 }
 
 /* LAYOUT */
 .container {
     display: flex;
     justify-content: space-between;
-    padding: 20px;
-    position: relative;
-    z-index: 1;
+    padding: 15px;
 }
 
 /* PAINEL */
 .panel {
-    width: 260px;
-    padding: 20px;
-    border-radius: 15px;
-    background: rgba(0,0,0,0.6);
-    border: 1px solid rgba(0,234,255,0.3);
-    box-shadow: 0 0 20px rgba(0,234,255,0.2);
+    width: 220px;
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
     position: relative;
-    overflow: hidden;
-    transition: 0.3s;
+    font-size: 13px;
 }
 
-/* LINHA A CORRER */
+/* BORDA ANIMADA COMPLETA */
 .panel::after {
     content: "";
     position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 2px;
-    background: #00eaff;
-    animation: scan 5s linear infinite;
+    inset: 0;
+    border-radius: 10px;
+    padding: 1px;
+    background: linear-gradient(90deg, transparent, #00eaff, transparent);
+    background-size: 200% 100%;
+    animation: borderRun 5s linear infinite;
+
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
 }
 
-@keyframes scan {
-    0% { left: -100%; }
-    100% { left: 100%; }
+@keyframes borderRun {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
-.panel:hover {
-    box-shadow: 0 0 40px #00eaff;
-    transform: translateY(-5px);
-}
-
-/* TITULOS */
+/* TITULO */
 .panel h2, .panel h3 {
     margin-top: 0;
     border-bottom: 1px solid #00eaff30;
-    padding-bottom: 5px;
 }
 
 /* STATUS */
 .dot {
-    height: 10px;
-    width: 10px;
+    width: 8px;
+    height: 8px;
     background: #00ff88;
     border-radius: 50%;
     display: inline-block;
-    box-shadow: 0 0 10px #00ff88;
 }
 
 /* LOGO */
 .logo img {
-    width: 400px;
+    width: 380px;
     mix-blend-mode: screen;
     filter: drop-shadow(0 0 40px #00eaff);
     animation: pulse 3s infinite;
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.07); }
-    100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 
 /* CHAT */
 #chat {
     width: 90%;
-    margin: 20px auto;
-    height: 250px;
+    margin: 10px auto;
+    height: 200px;
     overflow-y: auto;
-    border-radius: 10px;
-    padding: 15px;
+    padding: 10px;
     background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(0,234,255,0.3);
-    box-shadow: inset 0 0 20px #00eaff20;
-    font-family: "Courier New", monospace;
-}
-
-/* BRILHO DO CHAT */
-@keyframes glow {
-    0% { box-shadow: inset 0 0 10px #00eaff20; }
-    50% { box-shadow: inset 0 0 25px #00eaff60; }
-    100% { box-shadow: inset 0 0 10px #00eaff20; }
-}
-
-#chat {
-    animation: glow 6s infinite;
+    font-family: "Share Tech Mono", monospace;
+    border-radius: 10px;
 }
 
 /* CURSOR */
@@ -162,49 +119,32 @@ body::after {
     display: flex;
     justify-content: center;
     gap: 10px;
-    position: relative;
-    z-index: 1;
 }
 
 input {
     width: 60%;
-    padding: 12px;
+    padding: 10px;
     background: black;
     border: 1px solid #00eaff;
     color: #00eaff;
-    border-radius: 8px;
-    outline: none;
 }
 
-input:focus {
-    box-shadow: 0 0 25px #00eaff;
-}
-
-/* BOTÃO */
 button {
-    padding: 12px 25px;
+    padding: 10px 20px;
     background: transparent;
     border: 1px solid #00eaff;
     color: #00eaff;
     cursor: pointer;
-    border-radius: 8px;
-    transition: 0.3s;
-}
-
-button:hover {
-    background: #00eaff20;
-    box-shadow: 0 0 20px #00eaff;
 }
 
 /* COMANDOS */
 .panel p {
     cursor: pointer;
-    transition: 0.3s;
+    transition: 0.2s;
 }
 
 .panel p:hover {
     color: #00ffcc;
-    transform: translateX(5px);
 }
 </style>
 </head>
@@ -226,10 +166,10 @@ button:hover {
 </div>
 
 <div class="panel">
-    <h3>Comandos</h3>
-    <p onclick="limpar()">🧹 /limpar</p>
-    <p onclick="ajuda()">❓ /ajuda</p>
-    <p onclick="memoria()">🧠 /memoria</p>
+    <h3>COMANDOS</h3>
+    <p onclick="limpar()">[ CLR ] Limpar</p>
+    <p onclick="ajuda()">[ HLP ] Ajuda</p>
+    <p onclick="memoria()">[ MEM ] Memória</p>
 </div>
 
 </div>
@@ -237,8 +177,8 @@ button:hover {
 <div id="chat"></div>
 
 <div class="input-area">
-    <input id="pergunta" placeholder="Fala com Gatolas...">
-    <button onclick="enviar()">Enviar</button>
+    <input id="pergunta" placeholder="Digite comando...">
+    <button onclick="enviar()">EXEC</button>
 </div>
 
 <script>
@@ -247,11 +187,15 @@ const input = document.getElementById("pergunta")
 
 function adicionar(texto) {
     document.querySelectorAll(".cursor").forEach(el => el.classList.remove("cursor"))
-    chat.innerHTML += `<p class="cursor">> ${texto}</p>`
+
+    let linha = document.createElement("p")
+    linha.classList.add("cursor")
+    linha.textContent = "> " + texto
+
+    chat.appendChild(linha)
     chat.scrollTop = chat.scrollHeight
 }
 
-/* ENTER */
 input.addEventListener("keypress", e => {
     if (e.key === "Enter") enviar()
 })
@@ -273,48 +217,28 @@ async function enviar() {
     adicionar("Gatolas: " + data.resposta)
 }
 
-/* FUNÇÕES INTELIGENTES */
-function infoSistema() {
-    adicionar("Gatolas: Sistema online e operacional.")
-}
+/* INFO */
+function infoSistema(){ adicionar("Sistema online.") }
+function infoStatus(){ adicionar("Serviços ativos.") }
+function infoModelo(){ adicionar("GPT-4o-mini ativo.") }
+function infoConexao(){ adicionar("Conexão estável.") }
 
-function infoStatus() {
-    adicionar("Gatolas: Todos os serviços estão ativos.")
-}
+function limpar(){ chat.innerHTML = "" }
+function ajuda(){ adicionar("Use: CLR, MEM") }
+function memoria(){ adicionar("Memória futura.") }
 
-function infoModelo() {
-    adicionar("Gatolas: Modelo GPT-4o-mini em execução.")
-}
-
-function infoConexao() {
-    adicionar("Gatolas: Conexão estável com servidor.")
-}
-
-function limpar() {
-    chat.innerHTML = ""
-}
-
-function ajuda() {
-    adicionar("Gatolas: Usa comandos como /limpar, /memoria.")
-}
-
-function memoria() {
-    adicionar("Gatolas: Memória será ativada com Firebase.")
-}
-
-/* RELÂMPAGOS SUAVES */
+/* RELÂMPAGO SUAVE */
 setInterval(() => {
-    let flash = document.createElement("div")
-    flash.style.position = "absolute"
-    flash.style.top = "0"
-    flash.style.left = Math.random()*100 + "%"
-    flash.style.width = "2px"
-    flash.style.height = "100%"
-    flash.style.background = "#00eaff"
-    flash.style.opacity = "0.3"
-    document.body.appendChild(flash)
-    setTimeout(() => flash.remove(), 200)
-}, 3000)
+    let l = document.createElement("div")
+    l.style.position="absolute"
+    l.style.left=Math.random()*100+"%"
+    l.style.width="1px"
+    l.style.height="100%"
+    l.style.background="#00eaff"
+    l.style.opacity="0.2"
+    document.body.appendChild(l)
+    setTimeout(()=>l.remove(),200)
+},5000)
 
 </script>
 
