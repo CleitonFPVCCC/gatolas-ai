@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <title>Gatolas AI</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <style>
+
 body {
     margin: 0;
     font-family: "Orbitron", sans-serif;
@@ -15,58 +16,74 @@ body {
     overflow: hidden;
 }
 
-/* HEX REAL */
+/* HEX REAL MAIS LIMPO */
 body::before {
     content: "";
     position: absolute;
     width: 100%;
     height: 100%;
-    background: url("hex.png") center/cover no-repeat;
-    opacity: 0.25;
-    z-index: 0;
+    background-image:
+        linear-gradient(60deg, #00eaff0a 1px, transparent 1px),
+        linear-gradient(-60deg, #00eaff0a 1px, transparent 1px),
+        linear-gradient(0deg, #00eaff08 1px, transparent 1px);
+    background-size: 60px 100px;
+    opacity: 0.15;
 }
 
-/* GARANTE CLIQUE */
-.container, #chat, .input-area {
-    position: relative;
-    z-index: 2;
+/* HUD LINES */
+body::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        transparent,
+        transparent 2px,
+        rgba(0,234,255,0.03) 3px
+    );
+    pointer-events: none;
 }
 
 /* LAYOUT */
 .container {
     display: flex;
     justify-content: space-between;
-    padding: 15px;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
 }
 
 /* PAINEL */
 .panel {
-    width: 220px;
-    padding: 15px;
-    border-radius: 10px;
+    width: 240px;
+    padding: 18px;
+    border-radius: 12px;
     background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(0,234,255,0.2);
     position: relative;
     overflow: hidden;
 }
 
-/* ENERGIA NA BORDA */
+/* BORDA ANIMADA COMPLETA (MINHOCA) */
 .panel::after {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: 10px;
-    border: 1px solid transparent;
+    width: 120px;
+    height: 2px;
     background: linear-gradient(90deg, transparent, #00eaff, transparent);
-    background-size: 300% 300%;
-    animation: energyFlow 4s linear infinite;
+    animation: snake 6s linear infinite;
 }
 
-@keyframes energyFlow {
-    0%   { background-position: 0% 50%; }
-    25%  { background-position: 100% 50%; }
-    50%  { background-position: 100% 100%; }
-    75%  { background-position: 0% 100%; }
-    100% { background-position: 0% 50%; }
+/* CAMINHO COMPLETO */
+@keyframes snake {
+    0%   { top: 0; left: -120px; }
+    25%  { top: 0; left: 100%; }
+    26%  { top: -120px; left: 100%; transform: rotate(90deg); }
+    50%  { top: 100%; left: 100%; transform: rotate(90deg); }
+    51%  { top: 100%; left: 100%; transform: rotate(180deg); }
+    75%  { top: 100%; left: -120px; transform: rotate(180deg); }
+    76%  { top: 100%; left: -120px; transform: rotate(270deg); }
+    100% { top: -120px; left: -120px; transform: rotate(270deg); }
 }
 
 /* TITULOS */
@@ -86,7 +103,7 @@ body::before {
 
 /* LOGO */
 .logo img {
-    width: 350px;
+    width: 380px;
     mix-blend-mode: screen;
     filter: drop-shadow(0 0 40px #00eaff);
     animation: pulse 3s infinite;
@@ -99,13 +116,14 @@ body::before {
 /* CHAT */
 #chat {
     width: 90%;
-    margin: 10px auto;
-    height: 220px;
+    margin: 15px auto;
+    height: 230px;
     overflow-y: auto;
     padding: 10px;
     background: rgba(0,0,0,0.7);
-    font-family: "Courier New", monospace;
     border-radius: 10px;
+    border: 1px solid rgba(0,234,255,0.3);
+    font-family: "Share Tech Mono", monospace;
 }
 
 /* CURSOR */
@@ -127,21 +145,30 @@ body::before {
 
 input {
     width: 60%;
-    padding: 10px;
+    padding: 12px;
     background: black;
     border: 1px solid #00eaff;
     color: #00eaff;
+    border-radius: 6px;
+}
+
+input:focus {
+    box-shadow: 0 0 15px #00eaff;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 25px;
     background: transparent;
     border: 1px solid #00eaff;
     color: #00eaff;
     cursor: pointer;
 }
 
-/* COMANDOS */
+button:hover {
+    background: #00eaff20;
+}
+
+/* CLIQUE */
 .panel p {
     cursor: pointer;
 }
@@ -149,6 +176,7 @@ button {
 .panel p:hover {
     color: #00ffcc;
 }
+
 </style>
 </head>
 
@@ -170,9 +198,9 @@ button {
 
 <div class="panel">
     <h3>COMANDOS</h3>
-    <p onclick="limpar()">CLR /limpar</p>
-    <p onclick="ajuda()">HLP /ajuda</p>
-    <p onclick="memoria()">MEM /memoria</p>
+    <p onclick="limpar()">/limpar</p>
+    <p onclick="ajuda()">/ajuda</p>
+    <p onclick="memoria()">/memoria</p>
 </div>
 
 </div>
@@ -180,11 +208,12 @@ button {
 <div id="chat"></div>
 
 <div class="input-area">
-    <input id="pergunta" placeholder="Fala com Gatolas...">
+    <input id="pergunta" placeholder="Digite comando...">
     <button onclick="enviar()">EXEC</button>
 </div>
 
 <script>
+
 const chat = document.getElementById("chat")
 const input = document.getElementById("pergunta")
 
@@ -221,27 +250,14 @@ async function enviar() {
 }
 
 /* INFO */
-function infoSistema(){ adicionar("Sistema online.") }
+function infoSistema(){ adicionar("Sistema online e operacional.") }
 function infoStatus(){ adicionar("Serviços ativos.") }
-function infoModelo(){ adicionar("GPT-4o-mini ativo.") }
+function infoModelo(){ adicionar("GPT-4o-mini em execução.") }
 function infoConexao(){ adicionar("Conexão estável.") }
 
 function limpar(){ chat.innerHTML = "" }
-function ajuda(){ adicionar("Use: /limpar, /memoria") }
+function ajuda(){ adicionar("Use /limpar, /memoria.") }
 function memoria(){ adicionar("Memória em desenvolvimento.") }
-
-/* RELÂMPAGO SUAVE */
-setInterval(() => {
-    let l = document.createElement("div")
-    l.style.position="absolute"
-    l.style.left=Math.random()*100+"%"
-    l.style.width="1px"
-    l.style.height="100%"
-    l.style.background="#00eaff"
-    l.style.opacity="0.2"
-    document.body.appendChild(l)
-    setTimeout(()=>l.remove(),200)
-},5000)
 
 </script>
 
