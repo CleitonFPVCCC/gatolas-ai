@@ -15,7 +15,7 @@ body {
     overflow: auto;
 }
 
-/* GRID HEX */
+/* HEX GRID ANIMADO */
 body::before {
     content: "";
     position: absolute;
@@ -24,12 +24,16 @@ body::before {
     background-image:
         linear-gradient(30deg, #00eaff08 12%, transparent 12.5%),
         linear-gradient(150deg, #00eaff08 12%, transparent 12.5%);
-    background-size: 60px 100px;
-    opacity: 0.2;
-    z-index: 0;
+    background-size: 80px 140px;
+    animation: hexMove 12s linear infinite;
 }
 
-/* HUD LINES */
+@keyframes hexMove {
+    from { background-position: 0 0; }
+    to { background-position: 80px 140px; }
+}
+
+/* LINHAS HUD */
 body::after {
     content: "";
     position: absolute;
@@ -60,7 +64,26 @@ body::after {
     background: rgba(0,0,0,0.6);
     border: 1px solid rgba(0,234,255,0.3);
     box-shadow: 0 0 20px rgba(0,234,255,0.2);
+    position: relative;
+    overflow: hidden;
     transition: 0.3s;
+}
+
+/* LINHA A CORRER */
+.panel::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 2px;
+    background: #00eaff;
+    animation: scan 5s linear infinite;
+}
+
+@keyframes scan {
+    0% { left: -100%; }
+    100% { left: 100%; }
 }
 
 .panel:hover {
@@ -93,7 +116,6 @@ body::after {
     animation: pulse 3s infinite;
 }
 
-/* ANIMAÇÃO */
 @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.07); }
@@ -104,7 +126,7 @@ body::after {
 #chat {
     width: 90%;
     margin: 20px auto;
-    height: 300px;
+    height: 250px;
     overflow-y: auto;
     border-radius: 10px;
     padding: 15px;
@@ -114,8 +136,19 @@ body::after {
     font-family: "Courier New", monospace;
 }
 
+/* BRILHO DO CHAT */
+@keyframes glow {
+    0% { box-shadow: inset 0 0 10px #00eaff20; }
+    50% { box-shadow: inset 0 0 25px #00eaff60; }
+    100% { box-shadow: inset 0 0 10px #00eaff20; }
+}
+
+#chat {
+    animation: glow 6s infinite;
+}
+
 /* CURSOR */
-#chat p::after {
+.cursor::after {
     content: " █";
     animation: blink 1s infinite;
 }
@@ -141,7 +174,6 @@ input {
     color: #00eaff;
     border-radius: 8px;
     outline: none;
-    box-shadow: 0 0 10px #00eaff30;
 }
 
 input:focus {
@@ -183,10 +215,10 @@ button:hover {
 
 <div class="panel">
     <h2>GATOLAS AI</h2>
-    <p><span class="dot"></span> Sistema Online</p>
-    <p>Status: Ativo</p>
-    <p>Modelo: GPT-4o-mini</p>
-    <p>Conexão: Estável</p>
+    <p onclick="infoSistema()"><span class="dot"></span> Sistema</p>
+    <p onclick="infoStatus()">Status</p>
+    <p onclick="infoModelo()">Modelo</p>
+    <p onclick="infoConexao()">Conexão</p>
 </div>
 
 <div class="logo">
@@ -195,9 +227,9 @@ button:hover {
 
 <div class="panel">
     <h3>Comandos</h3>
-    <p onclick="limpar()">/limpar</p>
-    <p onclick="ajuda()">/ajuda</p>
-    <p onclick="memoria()">/memoria</p>
+    <p onclick="limpar()">🧹 /limpar</p>
+    <p onclick="ajuda()">❓ /ajuda</p>
+    <p onclick="memoria()">🧠 /memoria</p>
 </div>
 
 </div>
@@ -214,15 +246,14 @@ const chat = document.getElementById("chat")
 const input = document.getElementById("pergunta")
 
 function adicionar(texto) {
-    chat.innerHTML += `<p>> ${texto}</p>`
+    document.querySelectorAll(".cursor").forEach(el => el.classList.remove("cursor"))
+    chat.innerHTML += `<p class="cursor">> ${texto}</p>`
     chat.scrollTop = chat.scrollHeight
 }
 
-/* ENTER para enviar */
-input.addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-        enviar()
-    }
+/* ENTER */
+input.addEventListener("keypress", e => {
+    if (e.key === "Enter") enviar()
 })
 
 async function enviar() {
@@ -239,22 +270,52 @@ async function enviar() {
     })
 
     let data = await resposta.json()
-
     adicionar("Gatolas: " + data.resposta)
 }
 
-/* COMANDOS */
+/* FUNÇÕES INTELIGENTES */
+function infoSistema() {
+    adicionar("Gatolas: Sistema online e operacional.")
+}
+
+function infoStatus() {
+    adicionar("Gatolas: Todos os serviços estão ativos.")
+}
+
+function infoModelo() {
+    adicionar("Gatolas: Modelo GPT-4o-mini em execução.")
+}
+
+function infoConexao() {
+    adicionar("Gatolas: Conexão estável com servidor.")
+}
+
 function limpar() {
     chat.innerHTML = ""
 }
 
 function ajuda() {
-    adicionar("Gatolas: Comandos disponíveis: /limpar, /memoria")
+    adicionar("Gatolas: Usa comandos como /limpar, /memoria.")
 }
 
 function memoria() {
-    adicionar("Gatolas: Memória ainda em desenvolvimento")
+    adicionar("Gatolas: Memória será ativada com Firebase.")
 }
+
+/* RELÂMPAGOS SUAVES */
+setInterval(() => {
+    let flash = document.createElement("div")
+    flash.style.position = "absolute"
+    flash.style.top = "0"
+    flash.style.left = Math.random()*100 + "%"
+    flash.style.width = "2px"
+    flash.style.height = "100%"
+    flash.style.background = "#00eaff"
+    flash.style.opacity = "0.3"
+    document.body.appendChild(flash)
+    setTimeout(() => flash.remove(), 200)
+}, 3000)
+
 </script>
 
 </body>
