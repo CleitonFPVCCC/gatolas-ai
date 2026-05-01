@@ -8,14 +8,8 @@ import asyncio
 import edge_tts
 import pygame
 import speech_recognition as sr
-from flask import Flask, request, jsonify
-
-# =========================
-# ⚙️ CONFIG
-# =========================
-API_KEY = "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"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-SERVER_URL = "https://gatolas-ai.onrender.com/perguntar"
+import json
+import subprocess
 
 # =========================
 # 🔊 AUDIO
@@ -28,53 +22,56 @@ pygame.mixer.init()
 fila = queue.Queue()
 
 # =========================
-# 🧠 MEMÓRIA
+# 🧠 MEMÓRIA (JSON)
 # =========================
-memoria = {"tarefas": []}
-historico = []
+MEM_FILE = "memoria.json"
+
+def carregar_memoria():
+    if os.path.exists(MEM_FILE):
+        with open(MEM_FILE, "r") as f:
+            return json.load(f)
+    return {"tarefas": [], "dono": "cleiton"}
+
+def salvar_memoria():
+    with open(MEM_FILE, "w") as f:
+        json.dump(memoria, f, indent=4)
+
+memoria = carregar_memoria()
 
 # =========================
 # 👤 NOMES
 # =========================
-nomes = ["Senhor Cleiton", "Drone Man", "Comandante"]
+nomes = ["Senhor Cleiton", "Comandante", "Drone Man"]
 
 # =========================
-# CONTROLO
+# 🔑 API
+# =========================
+API_KEY = ""
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+SERVER_URL = "https://gatolas-ai.onrender.com/perguntar"
+
+# =========================
+# ⏱️ CONTROLO
 # =========================
 ativo = False
 falando = False
+modo_dono = False
 tempo_ultimo_comando = 0
 TEMPO_ATIVO = 20
-modo_dono = True
 
 # =========================
-# 🎤 WAKE WORDS
+# 🔥 WAKE WORDS
 # =========================
-WAKE_WORDS = ["gatolas", "acorda", "wake up"]
+WAKE_WORDS = ["gatolas", "ok gatolas", "acorda"]
 
-# =========================
-# 🌐 FLASK (CONTROLO VIA TELEFONE)
-# =========================
-app = Flask(__name__)
-
-@app.route("/comando", methods=["POST"])
-def comando_remoto():
-    data = request.json
-    texto = data.get("texto", "")
-
-    fila.put(("remoto", texto, True))
-
-    return jsonify({"status": "ok", "comando": texto})
+DONO_KEY = ["sou eu", "cleiton", "modo dono"]
 
 # =========================
-# 🧠 IA LOCAL
+# 🧠 IA
 # =========================
 def perguntar_ia(pergunta):
-    global historico
-
     try:
-        historico.append({"role": "user", "content": pergunta})
-
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
@@ -82,15 +79,16 @@ def perguntar_ia(pergunta):
 
         data = {
             "model": "openai/gpt-3.5-turbo",
-            "messages": historico[-6:]
+            "messages": [
+                {"role": "system", "content": "Você é um assistente estilo Jarvis."},
+                {"role": "user", "content": pergunta}
+            ]
         }
 
-        response = requests.post(API_URL, headers=headers, json=data)
+        r = requests.post(API_URL, headers=headers, json=data)
 
-        if response.status_code == 200:
-            resposta = response.json()["choices"][0]["message"]["content"]
-            historico.append({"role": "assistant", "content": resposta})
-            return resposta.strip()
+        if r.status_code == 200:
+            return r.json()["choices"][0]["message"]["content"]
 
     except:
         pass
@@ -100,59 +98,39 @@ def perguntar_ia(pergunta):
 # =========================
 # 🌐 SERVIDOR
 # =========================
-def perguntar_servidor(texto, is_dono):
+def perguntar_servidor(texto, dono):
     try:
-        r = requests.post(SERVER_URL, json={"texto": texto, "dono": is_dono}, timeout=10)
-
+        r = requests.post(SERVER_URL, json={"texto": texto, "dono": dono})
         if r.status_code == 200:
-            data = r.json()
-            return data.get("resposta") or data.get("reply")
-
+            return r.json().get("resposta")
     except:
         pass
-
     return None
 
 # =========================
-# 🧠 AÇÕES (CONTROLAR PC)
+# 🖥️ CONTROLO DO PC
 # =========================
-def executar_acao(cmd):
+def executar_comando(cmd):
 
-    if "abrir youtube" in cmd:
-        os.system("start https://youtube.com")
-        return "Abrindo YouTube"
+    cmd = cmd.lower()
 
-    if "abrir google" in cmd:
-        os.system("start https://google.com")
-        return "Abrindo Google"
+    if "abrir chrome" in cmd:
+        subprocess.Popen("start chrome", shell=True)
+        return "Abrindo Chrome."
 
     if "abrir vscode" in cmd:
-        os.system("code")
-        return "Abrindo VS Code"
+        subprocess.Popen("code", shell=True)
+        return "Abrindo VS Code."
 
     if "desligar pc" in cmd:
         os.system("shutdown /s /t 5")
-        return "Desligando computador"
+        return "Desligando o computador."
+
+    if "reiniciar pc" in cmd:
+        os.system("shutdown /r /t 5")
+        return "Reiniciando."
 
     return None
-
-# =========================
-# 🧠 CÉREBRO
-# =========================
-def gatolas_brain(pergunta, is_dono):
-
-    # ações primeiro
-    acao = executar_acao(pergunta)
-    if acao:
-        return acao
-
-    # servidor
-    resposta = perguntar_servidor(pergunta, is_dono)
-    if resposta:
-        return resposta
-
-    # fallback IA
-    return perguntar_ia(pergunta)
 
 # =========================
 # 🔊 VOZ
@@ -161,23 +139,21 @@ async def falar_async(texto):
     global falando
 
     falando = True
-
     try:
-        nome = "voz.mp3"
+        file = "voz.mp3"
+        tts = edge_tts.Communicate(texto, "pt-BR-AntonioNeural")
+        await tts.save(file)
 
-        communicate = edge_tts.Communicate(text=texto, voice="pt-BR-AntonioNeural")
-        await communicate.save(nome)
-
-        pygame.mixer.music.load(nome)
+        pygame.mixer.music.load(file)
         pygame.mixer.music.play()
 
         while pygame.mixer.music.get_busy():
             time.sleep(0.1)
 
-        os.remove(nome)
+        os.remove(file)
 
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
     falando = False
 
@@ -185,10 +161,10 @@ def falar(texto):
     threading.Thread(target=lambda: asyncio.run(falar_async(texto))).start()
 
 # =========================
-# 🎤 OUVIR
+# 🎤 MICROFONE
 # =========================
 def ouvir():
-    global ativo, tempo_ultimo_comando
+    global ativo, modo_dono, tempo_ultimo_comando
 
     r = sr.Recognizer()
 
@@ -200,54 +176,102 @@ def ouvir():
                 audio = r.listen(source)
                 texto = r.recognize_google(audio, language="pt-PT").lower()
 
+                print("Você:", texto)
+
                 if any(w in texto for w in WAKE_WORDS):
                     ativo = True
+                    tempo_ultimo_comando = time.time()
+
+                    if any(d in texto for d in DONO_KEY):
+                        modo_dono = True
+                        falar("Modo dono ativado.")
+
                     texto = texto.replace("gatolas", "").strip()
 
                     if texto:
-                        fila.put(("voz", texto, True))
+                        fila.put(("voz", texto, modo_dono))
 
                 elif ativo:
-                    fila.put(("voz", texto, True))
+                    fila.put(("voz", texto, modo_dono))
+                    tempo_ultimo_comando = time.time()
 
             except:
                 pass
+
+# =========================
+# 🧠 RESPOSTAS
+# =========================
+def resposta_local(cmd, dono):
+
+    if "hora" in cmd:
+        return time.strftime("Agora são %H:%M")
+
+    if "tarefas" in cmd:
+        return str(memoria["tarefas"])
+
+    if dono:
+
+        if "adicionar tarefa" in cmd:
+            tarefa = cmd.replace("adicionar tarefa", "").strip()
+            memoria["tarefas"].append(tarefa)
+            salvar_memoria()
+            return "Tarefa adicionada."
+
+    return None
+
+# =========================
+# 🔁 PROCESSAR
+# =========================
+def processar(cmd, origem, dono):
+
+    # 🔥 comandos do PC
+    if dono:
+        r = executar_comando(cmd)
+        if r:
+            falar(r)
+            return
+
+    # 🧠 local
+    r = resposta_local(cmd, dono)
+    if r:
+        falar(r)
+        return
+
+    # 🌐 servidor
+    r = perguntar_servidor(cmd, dono)
+    if r:
+        falar(r)
+        return
+
+    # 🤖 IA fallback
+    r = perguntar_ia(cmd)
+    falar(r)
 
 # =========================
 # ⌨️ TECLADO
 # =========================
 def teclado():
     while True:
-        txt = input("Você: ")
-        fila.put(("teclado", txt, True))
-
-# =========================
-# 🔁 PROCESSAR
-# =========================
-def processar(cmd, origem, dono):
-    resposta = gatolas_brain(cmd, dono)
-
-    if resposta:
-        print("Gatolas:", resposta)
-
-        if origem != "teclado":
-            falar(resposta)
+        t = input("Você: ")
+        fila.put(("teclado", t, True))
 
 # =========================
 # 🚀 START
 # =========================
+falar("Gatolas online.")
+
 threading.Thread(target=ouvir, daemon=True).start()
 threading.Thread(target=teclado, daemon=True).start()
-
-# 🔥 servidor remoto
-threading.Thread(target=lambda: app.run(host="0.0.0.0", port=5000), daemon=True).start()
-
-falar("Sistema Gatolas ativo")
 
 while True:
 
     while not fila.empty():
-        origem, comando, dono = fila.get()
-        processar(comando, origem, dono)
+        origem, cmd, dono = fila.get()
+        processar(cmd, origem, dono)
+
+    if ativo and time.time() - tempo_ultimo_comando > TEMPO_ATIVO:
+        ativo = False
+        modo_dono = False
+        print("Standby")
 
     time.sleep(0.1)
