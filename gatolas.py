@@ -8,8 +8,7 @@ import asyncio
 import edge_tts
 import pygame
 import speech_recognition as sr
-import json
-import subprocess
+import webbrowser
 
 # =========================
 # 🔊 AUDIO
@@ -22,26 +21,15 @@ pygame.mixer.init()
 fila = queue.Queue()
 
 # =========================
-# 🧠 MEMÓRIA (JSON)
+# 🧠 MEMÓRIA
 # =========================
-MEM_FILE = "memoria.json"
-
-def carregar_memoria():
-    if os.path.exists(MEM_FILE):
-        with open(MEM_FILE, "r") as f:
-            return json.load(f)
-    return {"tarefas": [], "dono": "cleiton"}
-
-def salvar_memoria():
-    with open(MEM_FILE, "w") as f:
-        json.dump(memoria, f, indent=4)
-
-memoria = carregar_memoria()
+memoria = {"tarefas": []}
+historico = []
 
 # =========================
 # 👤 NOMES
 # =========================
-nomes = ["Senhor Cleiton", "Comandante", "Drone Man"]
+nomes = ["Senhor C", "Senhor Cleiton", "Young Drone Man"]
 
 # =========================
 # 🔑 API
@@ -49,29 +37,55 @@ nomes = ["Senhor Cleiton", "Comandante", "Drone Man"]
 API_KEY = ""
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+# =========================
+# 🌐 SERVIDOR
+# =========================
 SERVER_URL = "https://gatolas-ai.onrender.com/perguntar"
+CONTROL_URL = "https://gatolas-ai.onrender.com/controlar"
 
 # =========================
 # ⏱️ CONTROLO
 # =========================
 ativo = False
 falando = False
-modo_dono = False
 tempo_ultimo_comando = 0
 TEMPO_ATIVO = 20
 
 # =========================
+# 🔥 MODO DONO INTELIGENTE
+# =========================
+modo_dono = False
+voz_dono_assinatura = None  # futuro: reconhecimento de voz real
+
+# =========================
 # 🔥 WAKE WORDS
 # =========================
-WAKE_WORDS = ["gatolas", "ok gatolas", "acorda"]
-
-DONO_KEY = ["sou eu", "cleiton", "modo dono"]
+WAKE_WORDS = [
+    "gatolas", "gatola", "gato", "wake up",
+    "acorda", "ok gatolas"
+]
 
 # =========================
-# 🧠 IA
+# 🌐 CONTROLO DE DISPOSITIVOS
+# =========================
+def controlar_dispositivo(acao, destino="pc"):
+    try:
+        requests.post(CONTROL_URL, json={
+            "acao": acao,
+            "destino": destino
+        }, timeout=5)
+    except:
+        pass
+
+# =========================
+# 🧠 IA LOCAL (backup)
 # =========================
 def perguntar_ia(pergunta):
+    global historico
+
     try:
+        historico.append({"role": "user", "content": pergunta})
+
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
@@ -79,16 +93,15 @@ def perguntar_ia(pergunta):
 
         data = {
             "model": "openai/gpt-3.5-turbo",
-            "messages": [
-                {"role": "system", "content": "Você é um assistente estilo Jarvis."},
-                {"role": "user", "content": pergunta}
-            ]
+            "max_tokens": 120,
+            "messages": historico[-6:]
         }
 
         r = requests.post(API_URL, headers=headers, json=data)
 
         if r.status_code == 200:
-            return r.json()["choices"][0]["message"]["content"]
+            resposta = r.json()["choices"][0]["message"]["content"]
+            return resposta
 
     except:
         pass
@@ -98,50 +111,64 @@ def perguntar_ia(pergunta):
 # =========================
 # 🌐 SERVIDOR
 # =========================
-def perguntar_servidor(texto, dono):
+def perguntar_servidor(texto, is_dono):
     try:
-        r = requests.post(SERVER_URL, json={"texto": texto, "dono": dono})
+        r = requests.post(SERVER_URL, json={
+            "texto": texto,
+            "dono": is_dono
+        }, timeout=10)
+
         if r.status_code == 200:
-            return r.json().get("resposta")
+            data = r.json()
+            return data.get("resposta")
+
     except:
-        pass
-    return None
+        return None
 
 # =========================
-# 🖥️ CONTROLO DO PC
+# 🧠 CÉREBRO
 # =========================
-def executar_comando(cmd):
+def gatolas_brain(cmd, is_dono):
 
-    cmd = cmd.lower()
+    # 🔹 comandos locais primeiro
+    r = resposta(cmd, is_dono)
+    if r:
+        return r
 
-    if "abrir chrome" in cmd:
-        subprocess.Popen("start chrome", shell=True)
-        return "Abrindo Chrome."
+    # 🌐 servidor
+    r = perguntar_servidor(cmd, is_dono)
+    if r:
+        return r
 
-    if "abrir vscode" in cmd:
-        subprocess.Popen("code", shell=True)
-        return "Abrindo VS Code."
-
-    if "desligar pc" in cmd:
-        os.system("shutdown /s /t 5")
-        return "Desligando o computador."
-
-    if "reiniciar pc" in cmd:
-        os.system("shutdown /r /t 5")
-        return "Reiniciando."
-
-    return None
+    # fallback IA
+    return perguntar_ia(cmd)
 
 # =========================
 # 🔊 VOZ
 # =========================
+def detectar_idioma(texto):
+    if any(p in texto for p in ["the", "is", "you"]):
+        return "en"
+    return "pt"
+
 async def falar_async(texto):
     global falando
 
-    falando = True
+    if not texto:
+        return
+
+    print("Gatolas:", texto)
+
     try:
-        file = "voz.mp3"
-        tts = edge_tts.Communicate(texto, "pt-BR-AntonioNeural")
+        falando = True
+
+        voice = "pt-BR-AntonioNeural"
+        if detectar_idioma(texto) == "en":
+            voice = "en-US-GuyNeural"
+
+        file = f"voz_{time.time()}.mp3"
+
+        tts = edge_tts.Communicate(texto, voice)
         await tts.save(file)
 
         pygame.mixer.music.load(file)
@@ -153,7 +180,7 @@ async def falar_async(texto):
         os.remove(file)
 
     except Exception as e:
-        print(e)
+        print("Erro voz:", e)
 
     falando = False
 
@@ -161,15 +188,15 @@ def falar(texto):
     threading.Thread(target=lambda: asyncio.run(falar_async(texto))).start()
 
 # =========================
-# 🎤 MICROFONE
+# 🎤 OUVIR
 # =========================
-def ouvir():
-    global ativo, modo_dono, tempo_ultimo_comando
+def ouvir_continuo():
+    global ativo, tempo_ultimo_comando, modo_dono
 
     r = sr.Recognizer()
 
     with sr.Microphone() as source:
-        print("Microfone ativo")
+        print("🎧 Ouvindo...")
 
         while True:
             try:
@@ -180,98 +207,86 @@ def ouvir():
 
                 if any(w in texto for w in WAKE_WORDS):
                     ativo = True
+                    modo_dono = True
                     tempo_ultimo_comando = time.time()
 
-                    if any(d in texto for d in DONO_KEY):
-                        modo_dono = True
-                        falar("Modo dono ativado.")
+                    for w in WAKE_WORDS:
+                        texto = texto.replace(w, "")
 
-                    texto = texto.replace("gatolas", "").strip()
-
-                    if texto:
-                        fila.put(("voz", texto, modo_dono))
+                    if texto.strip():
+                        fila.put(("voz", texto, True))
+                    else:
+                        falar("Sim, estou ouvindo.")
 
                 elif ativo:
                     fila.put(("voz", texto, modo_dono))
-                    tempo_ultimo_comando = time.time()
 
             except:
                 pass
 
 # =========================
-# 🧠 RESPOSTAS
+# 🧠 COMANDOS REAIS (IMPORTANTE)
 # =========================
-def resposta_local(cmd, dono):
+def resposta(cmd, is_dono):
+    cmd = cmd.lower()
 
-    if "hora" in cmd:
+    # 📅 hora
+    if "horas" in cmd:
         return time.strftime("Agora são %H:%M")
 
-    if "tarefas" in cmd:
-        return str(memoria["tarefas"])
+    # 🌐 abrir youtube (PC)
+    if "youtube" in cmd:
+        webbrowser.open("https://youtube.com")
+        return "Abrindo YouTube no computador."
 
-    if dono:
+    # 📱 abrir whatsapp no telefone
+    if "whatsapp" in cmd:
+        controlar_dispositivo("abrir_whatsapp", "telefone")
+        return "Abrindo WhatsApp no telefone."
 
-        if "adicionar tarefa" in cmd:
-            tarefa = cmd.replace("adicionar tarefa", "").strip()
-            memoria["tarefas"].append(tarefa)
-            salvar_memoria()
-            return "Tarefa adicionada."
+    # 💻 abrir chrome
+    if "chrome" in cmd:
+        os.system("start chrome")
+        return "Abrindo Chrome."
+
+    if not is_dono:
+        return "Acesso limitado."
 
     return None
 
 # =========================
 # 🔁 PROCESSAR
 # =========================
-def processar(cmd, origem, dono):
+def processar(cmd, origem, is_dono):
 
-    # 🔥 comandos do PC
-    if dono:
-        r = executar_comando(cmd)
-        if r:
-            falar(r)
-            return
+    resposta_texto = gatolas_brain(cmd, is_dono)
 
-    # 🧠 local
-    r = resposta_local(cmd, dono)
-    if r:
-        falar(r)
-        return
-
-    # 🌐 servidor
-    r = perguntar_servidor(cmd, dono)
-    if r:
-        falar(r)
-        return
-
-    # 🤖 IA fallback
-    r = perguntar_ia(cmd)
-    falar(r)
+    if resposta_texto:
+        if origem == "voz":
+            falar(resposta_texto)
+        else:
+            print("Gatolas:", resposta_texto)
 
 # =========================
 # ⌨️ TECLADO
 # =========================
-def teclado():
+def ler_teclado():
     while True:
-        t = input("Você: ")
-        fila.put(("teclado", t, True))
+        entrada = input("\nVocê: ")
+        fila.put(("teclado", entrada, True))
 
 # =========================
 # 🚀 START
 # =========================
-falar("Gatolas online.")
+falar("Sistema Gatolas ativo.")
 
-threading.Thread(target=ouvir, daemon=True).start()
-threading.Thread(target=teclado, daemon=True).start()
+threading.Thread(target=ouvir_continuo, daemon=True).start()
+threading.Thread(target=ler_teclado, daemon=True).start()
 
 while True:
 
     while not fila.empty():
-        origem, cmd, dono = fila.get()
-        processar(cmd, origem, dono)
-
-    if ativo and time.time() - tempo_ultimo_comando > TEMPO_ATIVO:
-        ativo = False
-        modo_dono = False
-        print("Standby")
+        origem, comando, dono = fila.get()
+        processar(comando, origem, dono)
 
     time.sleep(0.1)
