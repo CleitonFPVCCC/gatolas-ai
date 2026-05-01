@@ -34,7 +34,7 @@ nomes = ["Senhor C", "Senhor Cleiton", "Young Drone Man"]
 # =========================
 # 🔑 API
 # =========================
-API_KEY = ""
+API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # =========================
@@ -61,8 +61,9 @@ voz_dono_assinatura = None  # futuro: reconhecimento de voz real
 # 🔥 WAKE WORDS
 # =========================
 WAKE_WORDS = [
-    "gatolas", "gatola", "gato", "wake up",
-    "acorda", "ok gatolas"
+    "gatolas", "gatola", "gato", "wakeup", "wa", "canto", "12", "ca", "123",
+    "hora de acordar", "ok gatolas", "one two three",
+    "wake up", "acorde", "acorda", "cartolas", "cartola", "cantores"
 ]
 
 # =========================
